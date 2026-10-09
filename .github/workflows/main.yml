@@ -1,0 +1,33 @@
+name: Build VST3
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Code holen
+        uses: actions/checkout@v4
+
+      - name: Konfigurieren
+        run: cmake -B build -A x64
+
+      - name: Bauen
+        run: cmake --build build --config Release --parallel
+
+      - name: Plugins einsammeln
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Copy-Item -Recurse -Force "build/RingModSidechain_artefacts/Release/VST3/RingModSidechain.vst3" dist/
+          Copy-Item -Recurse -Force "build/SidechainCompare_artefacts/Release/VST3/SidechainCompare.vst3" dist/
+          Get-ChildItem -Recurse dist | Select-Object FullName
+
+      - name: VST3 als Download bereitstellen
+        uses: actions/upload-artifact@v4
+        with:
+          name: VST3-Windows
+          path: dist
+          if-no-files-found: error
